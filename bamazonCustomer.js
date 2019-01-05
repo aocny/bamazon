@@ -1,5 +1,6 @@
 var mysql = require("mysql");
 var inquirer = require("inquirer");
+require("console.table");
 
 // create the connection information for the sql database
 var connection = mysql.createConnection({
@@ -12,11 +13,11 @@ var connection = mysql.createConnection({
   user: "root",
 
   // Your password
-  password: "",
+  password: "Lucky1330!",
   database: "bamazon_db"
 });
 
-// connect to the mysql server and sql database
+// // connect to the mysql server and sql database
 connection.connect(function(err) {
   if (err) throw err;
   // run the show products function after the connection is made to prompt the user
@@ -26,12 +27,13 @@ connection.connect(function(err) {
 function show_products () {
     connection.query("select * from products", function (err, res) {
         if (err) throw err;
-console.log (res);
+console.table (res);
+start (res);
 });
 }
 
 // function which prompts the user for what action they should take
-function start() {
+function start(inventory) {
   inquirer
     .prompt({
       name: "purchase choice",
@@ -41,55 +43,58 @@ function start() {
     .then(function(answer) {
       // based on their answer,
       var choiceID = parseInt (answer.choice)
+      var product = checkInventory (choiceID, inventory)
+      if (product) {
+        askQuantity (product);
+      }
+      else {
+        console.log ("Sorry, we don't have that item in stock.")
+         show_products();  
+      }
+        console.log (answer);
     });
 }
+function askQuantity(product) {
+  inquirer
+    .prompt({
+      name: "quantity",
+      type: "input",
+      message: "How many of this item would you like to purchase?"
+    })
+    .then(function(answer) {
+      // based on their answer,
+      var quantity = parseInt (answer.quantity)
+      if (quantity > product.stock_quantity) {
+        console.log ("Sorry, this quantity is not in stock.");
+        show_products();
+      }
+      else {
+        purchase (product, quantity)
+      }
+        
+    });
+  }
 
-// // function to see if item is in inventory
-// function checkInventory() {
-//   // prompt for quantity of the item 
-//   inquirer
-//     .prompt([
-//       {
-//         name: "item",
-//         type: "input",
-//         message: "What is the item you would like to submit?"
-//       },
-//       {
-//         name: "category",
-//         type: "input",
-//         message: "What category would you like to place your auction in?"
-//       },
-//       {
-//         name: "startingBid",
-//         type: "input",
-//         message: "What would you like your starting bid to be?",
-//         validate: function(value) {
-//           if (isNaN(value) === false) {
-//             return true;
-//           }
-//           return false;
-//         }
-//       }
-//     ])
-//     .then(function(answer) {
-//       // when finished prompting, insert a new item into the db with that info
-//       connection.query(
-//         "INSERT INTO auctions SET ?",
-//         {
-//           item_name: answer.item,
-//           category: answer.category,
-//           starting_bid: answer.startingBid,
-//           highest_bid: answer.startingBid
-//         },
-//         function(err) {
-//           if (err) throw err;
-//           console.log("Your auction was created successfully!");
-//           // re-prompt the user for if they want to bid or post
-//           start();
-//         }
-//       );
-//     });
-// }
+    function purchase (product, quantity) {
+    connection.query("Update products Set stock_quantity=stock_quantity - ? where item_id = ?"[quantity, product.item_id] , function (err, res){
+      console.log ("Successfully purchased!")
+      if (err) throw err;
+    show_products ();
+  });
+  }
+
+  function checkInventory(choiceId, inventory) {
+    for (var i = 0; i < inventory.length; i++) {
+    if (inventory[i].item_id === choiceId) {
+      // If a matching product is found, return the product
+      return inventory[i];
+    }
+  }
+  // Otherwise return null
+    return null;
+ }
+
+
 
 // function bidAuction() {
 //   // query the database for all items being auctioned
