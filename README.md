@@ -1,3 +1,3 @@
 # bamazon
 
-![screenshot](https://aocny.github.com/images/bamazon.jpg)]
+![screenshot](https://aocny.github.io/bamazon/images/bamazon.jpg)]
